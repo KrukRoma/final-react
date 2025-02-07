@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setCars, addCar, updateCar, deleteCar } from '../redux/carsSlice';
 import './HomePage.css';
 import CarFilters from './CarFilters';
 import CarList from './CarList';
 import CarDetails from './CarDetails';
 import CarForm from './CarForm';
 import AddCarForm from './AddCarForm';
-
-const initialCars = [
-  { id: 1, name: 'Tesla Model S', manufacturer: 'Tesla', year: '2022', color: 'Red', volume: '100', price: '80000', description: 'Electric luxury sedan.', imageUrl: 'https://hdpic.club/uploads/posts/2022-01/1642748271_1-hdpic-club-p-tesla-krasnaya-1.jpg' },
-  { id: 2, name: 'BMW M3', manufacturer: 'BMW', year: '2021', color: 'Blue', volume: '3.0', price: '70000', description: 'Sporty sedan with a turbo engine.', imageUrl: 'https://mediapool.bmwgroup.com/cache/P9/202103/P90414981/P90414981-the-new-bmw-m3-competiton-sedan-frozen-portimao-blue-metallic-03-2021-2250px.jpg' },
-  { id: 3, name: 'Audi A4', manufacturer: 'Audi', year: '2020', color: 'Black', volume: '2.0', price: '40000', description: 'Compact luxury sedan.', imageUrl: 'https://media.autoexpress.co.uk/image/private/s--X-WVjvBW--/f_auto,t_content-image-full-desktop@1/v1562244444/autoexpress/2017/05/1386808_a4-saloon-black-edition-optional-18-inch-wheel.jpg' },
-  { id: 4, name: 'Mercedes-Benz S-Class', manufacturer: 'Mercedes-Benz', year: '2023', color: 'Silver', volume: '3.5', price: '90000', description: 'Premium sedan with advanced features.', imageUrl: 'https://i.infocar.ua/i/12/2817/1400x936.jpg' },
-];
 
 const getNextId = () => {
   const currentId = parseInt(localStorage.getItem('currentId') || '4', 10);
@@ -21,10 +16,8 @@ const getNextId = () => {
 };
 
 const HomePage = () => {
-  const [cars, setCars] = useState(() => {
-    const savedCars = localStorage.getItem('cars');
-    return savedCars ? JSON.parse(savedCars) : initialCars;
-  });
+  const dispatch = useDispatch();
+  const cars = useSelector((state) => state.cars.cars);
 
   const [filteredCars, setFilteredCars] = useState(cars);
   const [filters, setFilters] = useState({
@@ -54,8 +47,14 @@ const HomePage = () => {
   const [addingCar, setAddingCar] = useState(false);
 
   useEffect(() => {
+    const savedCars = JSON.parse(localStorage.getItem('cars')) || [];
+    dispatch(setCars(savedCars));
+  }, [dispatch]);
+  
+  useEffect(() => {
     localStorage.setItem('cars', JSON.stringify(cars));
   }, [cars]);
+  
 
   const applyFilters = () => {
     let filtered = cars;
@@ -122,8 +121,7 @@ const HomePage = () => {
   };
 
   const handleDeleteCar = (carId) => {
-    const updatedCars = cars.filter(car => car.id !== carId);
-    setCars(updatedCars);
+    dispatch(deleteCar(carId));
     setShowDetails(null);
   };
 
@@ -143,10 +141,7 @@ const HomePage = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    const updatedCars = cars.map(car =>
-      car.id === formData.id ? { ...formData } : car
-    );
-    setCars(updatedCars);
+    dispatch(updateCar(formData));
     setEditingCar(null);
     setFormData({
       id: null,
@@ -175,8 +170,7 @@ const HomePage = () => {
       ...formData,
       id: getNextId(),
     };
-    const updatedCars = [newCar, ...cars];
-    setCars(updatedCars);
+    dispatch(addCar(newCar));
     setAddingCar(false);
     setFormData({
       id: null,
